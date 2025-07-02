@@ -8,3 +8,5 @@ test/log/
 *.code-workspace
 *.swp
 docs/beta.html
+package-lock.json
+package.json
