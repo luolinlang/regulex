@@ -341,7 +341,10 @@ var printEscapeMap={
 };
 // Convert string to printable,replace all control chars and unicode to hex escape
 function toPrint(s,isRaw) {
-  var ctrl=/[\x00-\x1F\x7F-\x9F]/,unicode=/[\u009F-\uFFFF]/;
+  // var ctrl=/[\x00-\x1F\x7F-\x9F]/,unicode=/[\u009F-\uFFFF]/;
+  var ctrl=/[\x00-\x1F\x7F-\x9F]/;
+  // 修改：仅匹配超出常用中文范围的字符（排除 \u4E00-\u9FFF）
+  var unicode = /[\u009F-\u4DFF\uA000-\uFFFF]/;
   s=s.split('').map(function (c) {
     if (!isRaw && printEscapeMap.hasOwnProperty(c)) return printEscapeMap[c];
     else if (unicode.test(c)) return '\\u'+('00'+ord(c).toString(16).toUpperCase()).slice(-4);

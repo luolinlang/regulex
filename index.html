@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<title>Regulex：JavaScript Regular Expression Visualizer</title>
+<title>Regulex：JavaScript风格的正则表达式可视化工具</title>
 <style>
 body,html * {
 margin:0;
@@ -120,13 +120,13 @@ margin:0px 16px;
 border:1px solid black;
 background: #EEE;
 overflow: auto;
-cursor:move;
--webkit-touch-callout: none;
+/* cursor:move; */
+/* -webkit-touch-callout: none;
 -webkit-user-select: none;
 -khtml-user-select: none;
 -moz-user-select: none;
 -ms-user-select: none;
-user-select: none;
+user-select: none; */
 }
 #graphCt svg {
 display:block;
@@ -220,7 +220,7 @@ function getParams() {
   return params;
 }
 </script>
-<h1>Regulex <em>JavaScript Regular Expression Visualizer.</em></h1>
+<h1>Regulex <em>JavaScript风格的正则表达式可视化工具.</em></h1>
 <div id="inputCt">
     <div class="re code">
       <table>
@@ -234,14 +234,14 @@ function getParams() {
         </tr>
       </table>
     </div>
-    <button id="visualIt">Visualize</button>
-    <button id="exportIt">Export Image</button>
-    <button id="embedIt">Embed On My Site!</button>
-    <label><input type="checkbox" name="flag" value="i" />IgnoreCase</label>
-    <label><input type="checkbox" name="flag" value="m" />Multiline</label>
-    <label><input type="checkbox" name="flag" value="g" />GlobalMatch</label>
+    <button id="visualIt">可视化</button>
+    <button id="exportIt">导出图片</button>
+    <button id="embedIt">嵌入到我的网站！</button>
+    <label><input type="checkbox" name="flag" value="i" />忽略大小写</label>
+    <label><input type="checkbox" name="flag" value="m" />多行匹配</label>
+    <label><input type="checkbox" name="flag" value="g" />全局匹配</label>
 </div>
-<p id="errorBox" class="code">Error Message</p>
+<p id="errorBox" class="code">错误信息</p>
 <div id="graphCt" class="code"></div>
 
 <script type="text/javascript" charset="utf-8">
@@ -482,7 +482,7 @@ function svgDataURL(svg) {
 
 
 function dragGraph(g) {
-  g.addEventListener('mousedown',startMove);
+  // g.addEventListener('mousedown',startMove);
 
   function startMove(e) {
     clearSelect();
@@ -553,7 +553,7 @@ function clearSelect() {
 
 
 <footer>
-  <div class="normal">Created by <a href="https://jex.im/" target="_blank">Jex</a>.</div>
+  <div class="normal">创建于 <span>Jex</span>.</div>
   <div class="embed" ><a id="embedFooterLink" href="https://jex.im/regulex/" target="_blank">By Regulex</a></div>
 </footer>
 <script>
@@ -562,6 +562,96 @@ if (params.embed || params.cmd==="export") {
   embedFooterLink.href = "https://jex.im/regulex/" + location.hash.replace(/\bembed=true\b/ig,"").replace(/\bcmd=export\b/ig,'');
 }
 </script>
-<a id="github" href="https://github.com/CJex/regulex" target="_blank" style="display:inline-block;width:149px;height:149px;position: absolute; top: 0; right: 0; border: 0;"><img style="width:149px;height:149px;position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/e7bbb0521b397edbd5fe43e7f760759336b5e05f/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677265656e5f3030373230302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
+<a id="github" href="https://github.com/CJex/regulex" target="_blank"
+  style="display:inline-block;width:32px;height:32px;position: absolute; top: 0; right: 0; border: 0;    filter: opacity(0.25);"><img
+    style="width:32px;height:32px;position: absolute; top: 0; right: 0; border: 0;"
+    src="https://avatars.githubusercontent.com/in/15368?s=64&v=4" alt="Fork me on GitHub"
+    data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
+</a>
+
+<style>
+  .help-button-wrapper {
+    position: fixed;
+    bottom: 1em;
+    right: 1em;
+    text-align: center;
+    opacity: .2;
+  }
+
+  .help-button {
+    height: 2em;
+    width: 2em;
+    font-size: 14px;
+    border-radius: 50%;
+    border: 0 none;
+    background: #72ab59;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, 0.26);
+    transform: scale(1);
+    transition: all 200ms ease;
+  }
+
+  .help-button:hover,
+  .help-button:focus,
+  .help-button:active {
+    box-shadow: 0 8px 17px 0 rgba(0, 0, 0, 0.2);
+    outline: 0;
+  }
+
+  .help-button span {
+    display: block;
+    font-size: 1em;
+    transform: scale(1);
+    transition: transform 100ms ease;
+  }
+
+  .help-button:hover span,
+  .expanded .help-button span,
+  .expanded .help-button span {
+    transform: scale(1.25);
+  }
+
+  .expanded .help-button {
+    transform: scale(0.7);
+    color: rgba(255, 255, 255, 0.9);
+    background: #03A9F4;
+  }
+
+  .help-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    transition: all 200ms ease;
+    transform: translate(0, 90px) scale(0.5);
+    transform-origin: bottom center;
+    opacity: 0;
+  }
+
+  .expanded .help-list {
+    transform: translate(0px, 20px) scale(1);
+    opacity: 1;
+  }
+
+  .help-list li {
+    margin-bottom: 1em;
+  }
+
+  .help-list a {
+    color: #212121;
+  }
+</style>
+<div class="help-button-wrapper">
+  <ul class="help-list">
+    <li><span style="color: #fff;">任意字符（任意非换行字符）</span></li>
+  </ul>
+  <button class="help-button">?</button>
+</div>
+<script>
+  document.querySelector('.help-button').addEventListener('click', function() {
+  document.querySelector('.help-button-wrapper').classList.toggle('expanded');
+});
+</script>
+
 </body>
 </html>
