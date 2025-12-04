@@ -32,53 +32,77 @@ function initTmpText(paper) {
 /**
 @param {AST} re AST returned by `parse`
 */
-function visualize(re,flags,paper) {
+function visualize(re, flags, paper) {
   paper.clear();
-  paper.setSize(0,0);
-  var bg = paper.rect(0,0,0,0);
+  paper.setSize(0, 0);
+  var bg = paper.rect(0, 0, 0, 0);
   bg.attr("fill", BG_COLOR);
   bg.attr("stroke", BG_COLOR);
   
-  
   initTmpText(paper);
-  _multiLine=!!~flags.indexOf('m');
+  _multiLine = !!~flags.indexOf('m');
 
-  var texts=highlight(re.tree);
+  var texts = highlight(re.tree);
 
-  texts.unshift(text('/',hlColorMap.delimiter));
+  texts.unshift(text('/', hlColorMap.delimiter));
   texts.unshift(text("RegExp: "));
-  texts.push(text('/',hlColorMap.delimiter));
-  if (flags) texts.push(text(flags,hlColorMap.flags));
-  var charSize=getCharSize(FONT_SIZE,'bold'),
-      startX=PAPER_MARGIN,startY=charSize.height/2+PAPER_MARGIN,
-      width=0,height=0;
-
-  width=texts.reduce(function(x,t) {
-    t.x=x;
-    t.y=startY;
-    var w=t.text.length*charSize.width;
-    return x+w;
-  },startX);
-  width+=PAPER_MARGIN;
-  height=charSize.height+PAPER_MARGIN*2;
-  texts=paper.add(texts);
+  texts.push(text('/', hlColorMap.delimiter));
+  if (flags) texts.push(text(flags, hlColorMap.flags));
   
-  paper.setSize(width,charSize.height+PAPER_MARGIN*2);
+  var charSize = getCharSize(FONT_SIZE, 'bold'),
+      startX = PAPER_MARGIN,
+      startY = charSize.height / 2 + PAPER_MARGIN,
+      width = 0,
+      height = 0;
 
-  var ret=plot(re.tree,0,0);
+  // 创建一个 SVG 组元素 (使用原生 SVG 方法)
+  var regexGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+  regexGroup.setAttribute("class", "regex-container");
+  regexGroup.setAttribute("unselectable", "on"); // 防止选中
+  regexGroup.setAttribute("style", "user-select: none; -webkit-user-select: none;-webkit-user-drag: none;"); // 跨浏览器兼容
 
-  height=Math.max(ret.height+3*PAPER_MARGIN+charSize.height,height);
-  width=Math.max(ret.width+2*PAPER_MARGIN,width);
+  // 计算文本宽度并添加到组中
+  width = texts.reduce(function(x, t) {
+    t.x = x;
+    t.y = startY;
+    
+    // 将每个文本元素添加到 SVG 组中
+    var textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    textElement.setAttribute("x", x);
+    textElement.setAttribute("y", startY);
+    textElement.setAttribute("font-family", FONT_FAMILY);
+    textElement.setAttribute("font-size", FONT_SIZE);
+    textElement.setAttribute("font-weight", 'bold');
+    textElement.setAttribute("fill", t.fill || "black");
+    textElement.textContent = t.text;
+    textElement.setAttribute("unselectable", "on"); // 防止选中
+    
+    regexGroup.appendChild(textElement);
+    
+    var w = t.text.length * charSize.width;
+    return x + w;
+  }, startX);
+  
+  width += PAPER_MARGIN;
+  height = charSize.height + PAPER_MARGIN * 2;
+  
+  // 将 SVG 组添加到画布
+  paper.canvas.appendChild(regexGroup);
+  
+  paper.setSize(width, charSize.height + PAPER_MARGIN * 2);
 
-  paper.setSize(width,height);
+  var ret = plot(re.tree, 0, 0);
+
+  height = Math.max(ret.height + 3 * PAPER_MARGIN + charSize.height, height);
+  width = Math.max(ret.width + 2 * PAPER_MARGIN, width);
+
+  paper.setSize(width, height);
   
-  bg.attr('width',width);
-  bg.attr('height',height);
+  bg.attr('width', width);
+  bg.attr('height', height);
   
-  
-  translate(ret.items,PAPER_MARGIN,PAPER_MARGIN*2+charSize.height-ret.y);
+  translate(ret.items, PAPER_MARGIN, PAPER_MARGIN * 2 + charSize.height - ret.y);
   paper.add(ret.items);
-  
 }
 
 
@@ -132,10 +156,23 @@ function plotTree(tree,x,y) {
 }
 // return NodePlot config
 function textRect(s,x,y,bgColor,textColor) {
+  console.info(s,'sss')
   s=K.toPrint(s);
   var padding=6;
   var charSize=getCharSize(FONT_SIZE);
-  var tw=s.length*charSize.width,h=charSize.height+padding*2,w=tw+padding*2;
+  // 计算文本总宽度：区分中英文
+  var tw = 0;
+  for (var i = 0; i < s.length; i++) {
+    // 判断是否为中文字符（Unicode 范围：0x4E00-0x9FFF）
+    if (/[\u4E00-\u9FFF]/.test(s[i])) {
+      tw += charSize.width * 1.8; // 中文字符宽度：假设为普通字符的 1.8 倍
+    } else {
+      tw += charSize.width; // 普通字符宽度
+    }
+  }
+  var h = charSize.height + padding * 2;
+  var w = tw + padding * 2;
+
   var rect={
     type:'rect',
     x:x,y:y-(h/2),
@@ -288,7 +325,7 @@ var plotNode={
   },
   dot:function (node,x,y) {
     var bgColor='DarkGreen',textColor='white';
-    var a=textRect('AnyCharExceptNewLine',x,y,bgColor,textColor);
+    var a=textRect('任意字符',x,y,bgColor,textColor);
     a.rect.r=10;
     a.rect.tip="AnyChar except CR LF"
     return a;
@@ -315,19 +352,19 @@ var plotNode={
     var ret=plotNode[node.type](node,x,y);
     var width=ret.width,height=ret.height;
 
-    if (repeat.min===repeat.max && repeat.min===1) {
-      return ret; // if someone write /a{1}/
-    } else if (repeat.min===repeat.max) {
-      txt+=_plural(repeat.min);
+    if (repeat.min === repeat.max && repeat.min === 1) {
+      return ret; // 若用户写 /a{1}/
+    } else if (repeat.min === repeat.max) {
+        txt += _plural(repeat.min);
     } else {
-      txt+=repeat.min;
-      if (isFinite(repeat.max)) {
-        txt+= (repeat.max-repeat.min > 1 ? " to " : " or ") +_plural(repeat.max);
-      } else {
-        txt+=" or more times";
-      }
+        txt += repeat.min;
+        if (isFinite(repeat.max)) {
+            // 当范围差值 > 1 时用“到”，否则用“或”
+            txt += (repeat.max - repeat.min > 1 ? " 到 " : " 或 ") + _plural(repeat.max);
+        } else {
+            txt += "次或更多次";
+        }
     }
-
     var offsetX=padding,offsetY=0,r=padding,rectH=ret.y+ret.height-y,rectW=padding*2+ret.width;
     width=rectW;
     var p; // repeat rect box path
@@ -406,7 +443,7 @@ var plotNode={
     };
 
     function _plural(n) {
-      return n+ ((n<2)? " time":" times");
+      return n+ ((n<2)? " 次":" 次");
     }
     function _curveTranslate(x,y) {
       var p=this.path;
@@ -469,7 +506,7 @@ var plotNode={
   },
   charset:function (node,x,y) {
     var padding=6,spacing=4;
-    var clsDesc={d:'Digit',D:'NonDigit',w:'Word',W:'NonWord',s:'WhiteSpace',S:'NonWhiteSpace'};
+    var clsDesc={d:'数字',D:'NonDigit',w:'Word',W:'NonWord',s:'WhiteSpace',S:'NonWhiteSpace'};
     var charBgColor='LightSkyBlue',charTextColor='black',
         clsBgColor='Green',clsTextColor='white',
         rangeBgColor='teal',rangeTextColor='white',
@@ -482,7 +519,7 @@ var plotNode={
       if (!node.exclude) {
         return a;
       } else {
-        var tl=textLabel(a.x+a.width/2,a.y,'None of:',labelColor);
+        var tl=textLabel(a.x+a.width/2,a.y,'排除:',labelColor);
         var items=a.items;
         items.push(tl.label);
         var oldWidth=a.width;
@@ -570,10 +607,16 @@ var plotNode={
       items=items.concat(a.items);
       startY+=a.height+spacing;
     });
-    var tl=textLabel(rect.x+rect.width/2,rect.y,(node.exclude?'None':'One')+' of:',labelColor);
+    // 将英文标签替换为中文
+    var tl = textLabel(
+      rect.x + rect.width/2, 
+      rect.y, 
+      (node.exclude ? '排除:' : '其中之一:'),  // 直接翻译为"排除"和"One of"
+      labelColor
+    );
     items.push(tl.label);
     var oldWidth=width;
-    width=Math.max(tl.width,width);
+    width=Math.max(tl.width*1.8,width);
     var offsetX=(width-oldWidth)/2;//ajust label text
     translate(items,offsetX,0);
     return {
@@ -598,7 +641,7 @@ var plotNode={
         stroke:lineColor,
         'stroke-width':strokeWidth
       };
-      var tl=textLabel(rect.x+rect.width/2,rect.y-strokeWidth,'Group #'+node.num);
+      var tl=textLabel(rect.x+rect.width/2,rect.y-strokeWidth,'组 #'+node.num);
       var items=sub.items.concat([rect,tl.label]);
       var width=Math.max(tl.width,rectW);
       var offsetX=(width-rectW)/2;//ajust label text space
@@ -621,9 +664,18 @@ var plotNode={
       AssertBegin:{bg:"Indigo",fg:"white"}
     };
     var conf,nat=node.assertionType,txt=nat.replace('Assert','')+'!';
+    let chMap = {
+      'End!': '结束',
+      'LineBegin!': '行首',
+      'LineEnd!': '行尾',
+      'Begin!': '开始'
+    }
     if (conf=simpleAssert[nat]) {
       if (_multiLine && (nat==='AssertBegin' || nat==='AssertEnd'))  {
         txt='Line'+txt;
+      }
+      if (chMap[txt]) {
+        txt = chMap[txt]
       }
       return textRect(txt,x,y,conf.bg,conf.fg);
     }
@@ -632,12 +684,12 @@ var plotNode={
     if (nat===AssertLookahead) {
       lineColor="CornflowerBlue";
       fg="darkgreen";
-      txt="Followed by:";
+      txt="后跟:";
     } else if (nat===AssertNegativeLookahead) {
       lineColor="#F63";
       fg="Purple";
       //txt="Negative\nLookahead!"; // break line
-      txt="Not followed by:";
+      txt="不后跟:";
     }
 
     var sub=plotNode.group(node,x,y);
